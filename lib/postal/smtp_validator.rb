@@ -8,6 +8,7 @@ module Postal
       @source_ip_address = source_ip_address
       @options = options
       @smtp_client = nil
+      @google = false
       @connection_errors = []
       @hostnames = []
       @log_id = Nifty::Utils::RandomString.generate(:length => 8).upcase
@@ -15,7 +16,7 @@ module Postal
 
     def start
       servers.each do |server|
-        puts server
+        
         if server.is_a?(SMTPEndpoint)
           hostname = server.hostname
           port = server.port || 25
@@ -24,11 +25,14 @@ module Postal
           hostname = server[:hostname]
           port = server[:port] || 25
           ssl_mode = server[:ssl_mode] || 'Auto'
+        elsif server =~ /.google.com/i
+          @google = true
+          return true
         else
           hostname = server
           port = 25
           ssl_mode = 'Auto'
-        end
+        end        
 
         @hostnames << hostname
         [:aaaa, :a].each do |ip_type|
@@ -100,10 +104,22 @@ module Postal
     end
 
     def send_validation(message, force_rcpt_to = nil)
-      puts message.inspect
       start_time = Time.now
       result = SendResult.new
       result.log_id = @log_id
+      
+      if @google
+        uri = URI("https://mail.google.com/mail/gxlu?email=#{message.rcpt_to}")
+        res = Net::HTTP.get_response(uri)
+        if res.key?('set-cookie')
+          result.type = 'Valid'
+        else
+          result.type = 'Invalid'
+        end
+        result.time = (Time.now - start_time).to_f.round(2)
+        return result
+      end
+
       if @smtp_client && !@smtp_client.started?
         # For some reason we had an SMTP connection but it's no longer connected.
         # Make a new one.
@@ -138,8 +154,12 @@ module Postal
             @smtp_client.rset_errors
             rcpt_to = force_rcpt_to || @options[:force_rcpt_to] || message.rcpt_to
             log "Sending message #{message.server.id}::#{message.id} to #{rcpt_to}"
-            @smtp_client.mail_from(mail_from)
-            smtp_result = @smtp_client.rcptto_list([rcpt_to])
+            @smtp_client.mailfrom(mail_from)
+            @smtp_client.rcptto(rcpt_to)
+            @smtp_client.quit 
+            result.type = 'Valid'
+            result.time = (Time.now - start_time).to_f.round(2)
+            return result
           end
         rescue Errno::ECONNRESET, Errno::EPIPE, OpenSSL::SSL::SSLError
           if (tries += 1) < 2
@@ -149,13 +169,15 @@ module Postal
             raise
           end
         end
-        result.type = 'Sent'
-        result.details = "Message for #{rcpt_to} accepted by #{destination_host_description}"
-        if @smtp_client.source_address
-          result.details += " (from #{@smtp_client.source_address})"
-        end
-        result.output = smtp_result.string
-        log "Message sent ##{message.id} to #{destination_host_description} for #{rcpt_to}"
+        
+        # result.type = 'Sent'
+        # result.details = "Message for #{rcpt_to} accepted by #{destination_host_description}"
+        # if @smtp_client.source_address
+        #   result.details += " (from #{@smtp_client.source_address})"
+        # end
+        # result.output = smtp_result.string
+        log "Message sent!"
+        # log "Message sent ##{message.id} to #{destination_host_description} for #{rcpt_to}"
 
       rescue Net::SMTPServerBusy, Net::SMTPAuthenticationError, Net::SMTPSyntaxError, Net::SMTPUnknownError, Net::ReadTimeout => e
         log "#{e.class}: #{e.message}"
