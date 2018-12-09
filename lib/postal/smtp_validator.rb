@@ -15,6 +15,7 @@ module Postal
 
     def start
       servers.each do |server|
+        puts server
         if server.is_a?(SMTPEndpoint)
           hostname = server.hostname
           port = server.port || 25
@@ -98,7 +99,8 @@ module Postal
       end
     end
 
-    def send_message(message, force_rcpt_to = nil)
+    def send_validation(message, force_rcpt_to = nil)
+      puts message.inspect
       start_time = Time.now
       result = SendResult.new
       result.log_id = @log_id
@@ -120,7 +122,6 @@ module Postal
         else
           mail_from = "#{message.server.token}@#{Postal.config.dns.return_path}"
         end
-        raw_message = "Resent-Sender: #{mail_from}\r\n" + message.raw_message
         tries = 0
         begin
           if @smtp_client.nil?
@@ -137,7 +138,8 @@ module Postal
             @smtp_client.rset_errors
             rcpt_to = force_rcpt_to || @options[:force_rcpt_to] || message.rcpt_to
             log "Sending message #{message.server.id}::#{message.id} to #{rcpt_to}"
-            smtp_result = @smtp_client.send_message(raw_message, mail_from, [rcpt_to])
+            @smtp_client.mail_from(mail_from)
+            smtp_result = @smtp_client.rcptto_list([rcpt_to])
           end
         rescue Errno::ECONNRESET, Errno::EPIPE, OpenSSL::SSL::SSLError
           if (tries += 1) < 2

@@ -56,6 +56,32 @@ module Postal
       end
 
       #
+      # Return a single message. Accepts an ID or an array of conditions
+      #
+      def validation(*args)
+        Validation.find_one(self, *args)
+      end
+
+      #
+      # Return an array or count of messages.
+      #
+      def validations(*args)
+        Validation.find(self, *args)
+      end
+
+      def validations_with_pagination(*args)
+        Validation.find_with_pagination(self, *args)
+      end
+
+      #
+      # Create a new message with the given attributes. This won't be saved to the database
+      # until it has been 'save'd.
+      #
+      def new_validation(attributes = {})
+        Validation.new(self, attributes)
+      end
+
+      #
       # Return the total size of all stored messages
       #
       def total_size

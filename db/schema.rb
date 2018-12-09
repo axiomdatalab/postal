@@ -196,6 +196,25 @@ ActiveRecord::Schema.define(version: 2018_02_16_114344) do
     t.index ["server_id"], name: "index_queued_messages_on_server_id"
   end
 
+  create_table "queued_validations", id: :integer, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4", force: :cascade do |t|
+    t.integer "server_id"
+    t.integer "validation_id"
+    t.string "domain"
+    t.string "locked_by"
+    t.datetime "locked_at", precision: 6
+    t.datetime "retry_after"
+    t.datetime "created_at", precision: 6
+    t.datetime "updated_at", precision: 6
+    t.integer "ip_address_id"
+    t.integer "attempts", default: 0
+    t.integer "route_id"
+    t.boolean "manual", default: false
+    t.string "batch_key"
+    t.index ["domain"], name: "index_queued_messages_on_domain", length: 8
+    t.index ["validation_id"], name: "index_queued_validations_on_validation_id"
+    t.index ["server_id"], name: "index_queued_messages_on_server_id"
+  end
+
   create_table "routes", id: :integer, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4", force: :cascade do |t|
     t.string "uuid"
     t.integer "server_id"

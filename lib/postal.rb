@@ -27,6 +27,7 @@ module Postal
     autoload :Sender
     autoload :SMTPSender
     autoload :SMTPServer
+    autoload :SMTPValidator
     autoload :SpamCheck
     autoload :UserCreator
     autoload :Version

@@ -95,6 +95,34 @@ module Postal
       end
 
       #
+      # Return the hold expiry for this message
+      #
+      def hold_expiry
+        @hold_expiry ||= @attributes['hold_expiry'] ? Time.zone.at(@attributes['hold_expiry']) : nil
+      end
+
+      #
+      # Add a delivery attempt for this message
+      #
+      def create_delivery(status, options = {})
+        delivery = Delivery.create(self, options.merge(:status => status))
+        hold_expiry = status == 'Held' ? 7.days.from_now.to_f : nil
+        self.update(:status => status, :last_delivery_attempt => delivery.timestamp.to_f, :held => status == 'Held' ? 1 : 0, :hold_expiry => hold_expiry)
+        delivery
+      end
+
+      #
+      # Return all deliveries for this object
+      #
+      def deliveries
+        @deliveries ||= begin
+          @database.select('deliveries', :where => {:message_id => self.id}, :order => :timestamp).map do |hash|
+            Delivery.new(self, hash)
+          end
+        end
+      end
+
+      #
       # Provide access to set and get acceptable attributes
       #
       def method_missing(name, value = nil, &block)

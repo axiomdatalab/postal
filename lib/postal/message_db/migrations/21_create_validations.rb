@@ -3,7 +3,7 @@ module Postal
       module Migrations
         class CreateValidations < Postal::MessageDB::Migration
           def up
-            @database.provisioner.create_table(:messages,
+            @database.provisioner.create_table(:validations,
               :columns => {
                 :id                           =>  'int(11) NOT NULL AUTO_INCREMENT',
                 :token                        =>  'varchar(255) DEFAULT NULL',
@@ -17,16 +17,16 @@ module Postal
                 :credential_id                =>  'int(11) DEFAULT NULL',
                 :status                       =>  'varchar(255) DEFAULT NULL',
                 :held                         =>  'tinyint(1) DEFAULT 0',
+                :tag                          =>  'varchar(255) DEFAULT NULL',
                 :last_delivery_attempt        =>  'decimal(18,6) DEFAULT NULL',
                 :received_with_ssl            =>  'tinyint(1) DEFAULT NULL',
               },
               :indexes => {
-                :on_message_id                =>  '`message_id`(8)',
+                :on_validation_id             =>  '`validation_id`(8)',
                 :on_token                     =>  '`token`(6)',
-                :on_bounce_for_id             =>  '`bounce_for_id`',
                 :on_held                      =>  '`held`',
-                :on_rcpt_to                   =>  '`rcpt_to`(12), `timestamp`',
-                :on_mail_from                 =>  '`mail_from`(12), `timestamp`',
+                :on_rcpt_to                   =>  '`rcpt_to`(50), `timestamp`',
+                :on_mail_from                 =>  '`mail_from`(50), `timestamp`',
               }
             )
           end

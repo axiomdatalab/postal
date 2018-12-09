@@ -26,7 +26,7 @@
 
 class QueuedValidation < ApplicationRecord
 
-    include HasMessage
+    include HasValidation
   
     belongs_to :server
     belongs_to :ip_address, :optional => true

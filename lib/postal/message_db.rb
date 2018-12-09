@@ -12,8 +12,8 @@ module Postal
       autoload :Provisioner
       autoload :Statistics
       autoload :SuppressionList
-      autoload :Vdomains
-      autoload :Validations
+      autoload :Vdomain
+      autoload :Validation
       autoload :Webhooks
     end
   end

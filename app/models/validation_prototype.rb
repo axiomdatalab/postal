@@ -98,7 +98,7 @@ class ValidationPrototype
   end
 
   def create_validation(address)
-    validation = @server.validation_db.new_validation
+    validation = @server.message_db.new_validation
     validation.rcpt_to = address
     validation.mail_from = self.from_address
     validation.domain_id = self.domain.id
